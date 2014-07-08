@@ -1,0 +1,12 @@
+{
+    "name": "ci",
+    "chef_type": "role",
+    "json_class": "Chef::Role",
+    "description": "Continous integration server role",
+    "default_attributes": {
+    },
+    "run_list": [
+        "recipe[demo::jenkins]",
+        "recipe[demo::php]"
+    ]
+}

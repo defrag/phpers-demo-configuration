@@ -1,0 +1,13 @@
+{
+    "name": "lb",
+    "chef_type": "role",
+    "json_class": "Chef::Role",
+    "run_list": [
+        "recipe[demo::haproxy]"
+    ],
+    "override_attributes": {
+        "haproxy": {
+            "app_server_role": "php"
+        }
+    }
+}

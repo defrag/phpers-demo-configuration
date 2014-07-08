@@ -1,0 +1,79 @@
+<VirtualHost *:80>
+    ServerName <%= @params[:server_name] %>
+    DocumentRoot <%= @params[:docroot] %>
+
+    LogLevel info
+    ErrorLog <%= node[:apache][:log_dir] %>/<%= @params[:name] %>-error.log
+    CustomLog <%= node[:apache][:log_dir] %>/<%= @params[:name] %>-access.log combined
+
+    RewriteEngine On
+    RewriteLog <%= node[:apache][:log_dir] %>/<%= @application_name %>-rewrite.log
+    RewriteLogLevel 0
+
+    <Directory <%= @params[:docroot] %>>
+        Options +FollowSymLinks
+        AllowOverride None
+        Order allow,deny
+        Allow from all
+
+        RewriteEngine On
+        <% if @params[:server_is_canonical] -%>
+        # Canonical host, <%= @params[:server_name] %>
+        RewriteCond %{HTTP_HOST}   !^<%= @params[:server_name] %> [NC]
+        RewriteCond %{HTTP_HOST}   !^$
+        RewriteRule ^/(.*)$        http://<%= @params[:server_name] %>/$1 [L,R=301]
+        <% end -%>
+
+        # Explicitly disable rewriting for front controllers
+        RewriteRule ^app_dev.php - [L]
+        RewriteRule ^app.php - [L]
+        RewriteCond %{REQUEST_FILENAME} !-f
+        # Change below before deploying to production
+        RewriteRule ^(.*)$ app.php [QSA,L]
+        # RewriteRule ^(.*)$ app_dev.php [QSA,L]
+    </Directory>
+</VirtualHost>
+
+<% if node['apache']['listen_ports'].include?("443") -%>
+<VirtualHost *:443>
+    ServerName <%= @params[:server_name] %>
+    DocumentRoot <%= @params[:docroot] %>
+
+    SSLEngine ON
+    SSLCertificateKeyFile /etc/apache2/ssl/ssl.key/<%= @params[:server_name] %>.key
+    SSLCertificateFile /etc/apache2/ssl/ssl.crt/<%= @params[:server_name] %>.crt
+    SSLCertificateChainFile /etc/apache2/ssl/ssl.crt/Apache_Plesk_Install.txt
+
+    LogLevel info
+    ErrorLog <%= node[:apache][:log_dir] %>/ssl.<%= @params[:name] %>.error_log
+    CustomLog <%= node[:apache][:log_dir] %>/ssl.<%= @params[:name] %>.access_log combined
+
+    RewriteEngine On
+    RewriteLog <%= node[:apache][:log_dir] %>/ssl.<%= @application_name %>-rewrite.log
+    RewriteLogLevel 0
+
+    <Directory <%= @params[:docroot] %>>
+        Options +FollowSymlinks
+        AllowOverride None
+        Order allow,deny
+        Allow from all
+
+        RewriteEngine On
+        <% if @params[:server_is_canonical] -%>
+        # Canonical host, <%= @params[:server_name] %>
+        RewriteCond %{HTTP_HOST}   !^<%= @params[:server_name] %> [NC]
+        RewriteCond %{HTTP_HOST}   !^$
+        RewriteRule ^/(.*)$        http://<%= @params[:server_name] %>/$1 [L,R=301]
+        <% end -%>
+
+        # Explicitly disable rewriting for front controllers
+        RewriteRule ^app_dev.php - [L]
+        RewriteRule ^app.php - [L]
+        RewriteCond %{REQUEST_FILENAME} !-f
+
+        # Change below before deploying to production
+        RewriteRule ^(.*)$ app.php [QSA,L]
+        # RewriteRule ^(.*)$ app_dev.php [QSA,L]
+    </Directory>
+</VirtualHost>
+<% end -%>
